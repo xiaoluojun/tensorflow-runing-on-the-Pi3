@@ -1,0 +1,304 @@
+C51 COMPILER V9.01   MAIN                                                                  05/10/2016 09:43:20 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: d:\Keil\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          /*******************************************************************************
+   2          *                 
+   3          *                                      ∆’÷–ø∆ºº
+   4          --------------------------------------------------------------------------------
+   5          *  µ —È √˚               : 18B20Œ¬∂»œ‘ æ ‘—È
+   6          *  µ—ÈÀµ√˜       : LCD1602œ‘ æŒ¬∂»÷µ°£
+   7          * ¡¨Ω”∑Ω Ω       : º˚¡¨Ω”Õº
+   8          * ◊¢    “‚               : 
+   9          *******************************************************************************/
+  10          
+  11          #include<reg51.h>
+  12          #include"lcd.h"
+  13          #include"temp.h"
+  14          void LcdDisplay(int);
+  15          #define uchar unsigned char
+  16          #define uint unsigned int
+  17          
+  18          typedef unsigned char  U8;       /* defined for unsigned 8-bits integer variable          Œﬁ∑˚∫≈8Œª’˚–Õ±‰¡ø  */
+  19          typedef signed   char  S8;       /* defined for signed 8-bits integer variable            ”–∑˚∫≈8Œª’˚–Õ±‰¡ø  */
+  20          typedef unsigned int   U16;      /* defined for unsigned 16-bits integer variable         Œﬁ∑˚∫≈16Œª’˚–Õ±‰¡ø */
+  21          typedef signed   int   S16;      /* defined for signed 16-bits integer variable           ”–∑˚∫≈16Œª’˚–Õ±‰¡ø */
+  22          typedef unsigned long  U32;      /* defined for unsigned 32-bits integer variable         Œﬁ∑˚∫≈32Œª’˚–Õ±‰¡ø */
+  23          typedef signed   long  S32;      /* defined for signed 32-bits integer variable           ”–∑˚∫≈32Œª’˚–Õ±‰¡ø */
+  24          typedef float          F32;      /* single precision floating point variable (32bits) µ•æ´∂»∏°µ„ ˝£®32Œª≥§
+             -∂»£© */
+  25          typedef double         F64;      /* double precision floating point variable (64bits) À´æ´∂»∏°µ„ ˝£®64Œª≥§
+             -∂»£© */
+  26          
+  27          #define   Data_0_time    4
+  28          sbit  test=P1^0;
+  29          sbit  P2_0  = P2^0 ;
+  30          U8  U8FLAG,k;
+  31          U8  U8count,U8temp;
+  32          U8  U8T_data_H,U8T_data_L,U8RH_data_H,U8RH_data_L,U8checkdata;
+  33          U8  U8T_data_H_temp,U8T_data_L_temp,U8RH_data_H_temp,U8RH_data_L_temp,U8checkdata_temp;
+  34          U8  U8comdata;
+  35          U8  outdata[5];  //∂®“Â∑¢ÀÕµƒ◊÷Ω⁄ ˝        
+  36          U8  indata[5];
+  37          U8  count, count_r=0;
+  38          U8  str[5]={"RS232"};
+  39          U16 U16temp1,U16temp2;
+  40          void delay(U16 j)
+  41          {      U8 i;
+  42   1                  for(;j>0;j--)
+  43   1                {     
+  44   2                      for(i=0;i<27;i++);
+  45   2      
+  46   2                }
+  47   1      }
+  48          void  Delay_10us(void)
+  49          {
+  50   1              U8 i;
+  51   1              i--;
+  52   1              i--;
+  53   1              i--;
+C51 COMPILER V9.01   MAIN                                                                  05/10/2016 09:43:20 PAGE 2   
+
+  54   1              i--;
+  55   1              i--;
+  56   1              i--;
+  57   1      }
+  58                  
+  59          void  COM(void)
+  60          {
+  61   1           
+  62   1                      U8 i;
+  63   1                
+  64   1             for(i=0;i<8;i++)    
+  65   1                  {
+  66   2                      
+  67   2                          U8FLAG=2;   
+  68   2                      while((!P2_0)&&U8FLAG++);
+  69   2                              Delay_10us();
+  70   2                          Delay_10us();
+  71   2                              Delay_10us();
+  72   2                              U8temp=0;
+  73   2                   if(P2_0)U8temp=1;
+  74   2                          U8FLAG=2;
+  75   2                       while((P2_0)&&U8FLAG++);
+  76   2                      //≥¨ ±‘ÚÃ¯≥ˆfor—≠ª∑               
+  77   2                       if(U8FLAG==1)break;
+  78   2                      //≈–∂œ ˝æ›Œª «0ªπ «1     
+  79   2                         
+  80   2                      // »Áπ˚∏ﬂµÁ∆Ω∏ﬂπ˝‘§∂®0∏ﬂµÁ∆Ω÷µ‘Ú ˝æ›ŒªŒ™ 1 
+  81   2                       
+  82   2                         U8comdata<<=1;
+  83   2                         U8comdata|=U8temp;        //0
+  84   2                   }//rof
+  85   1      }
+  86          
+  87                  //--------------------------------
+  88                  //----- ™∂»∂¡»°◊”≥Ã–Ú ------------
+  89                  //--------------------------------
+  90                  //----“‘œ¬±‰¡øæ˘Œ™»´æ÷±‰¡ø--------
+  91                  //----Œ¬∂»∏ﬂ8Œª== U8T_data_H------
+  92                  //----Œ¬∂»µÕ8Œª== U8T_data_L------
+  93                  //---- ™∂»∏ﬂ8Œª== U8RH_data_H-----
+  94                  //---- ™∂»µÕ8Œª== U8RH_data_L-----
+  95                  //----–£—È 8Œª == U8checkdata-----
+  96                  //----µ˜”√œ‡πÿ◊”≥Ã–Ú»Áœ¬----------
+  97                  //---- Delay();, Delay_10us();,COM(); 
+  98                  //--------------------------------
+  99          void RH(void)
+ 100          {
+ 101   1                //÷˜ª˙¿≠µÕ18ms 
+ 102   1             P2_0=0;
+ 103   1                 delay(180);
+ 104   1                 P2_0=1;
+ 105   1               //◊‹œﬂ”……œ¿≠µÁ◊Ë¿≠∏ﬂ ÷˜ª˙—” ±20us
+ 106   1                 Delay_10us();
+ 107   1                 Delay_10us();
+ 108   1                 Delay_10us();
+ 109   1                 Delay_10us();
+ 110   1               //÷˜ª˙…ËŒ™ ‰»Î ≈–∂œ¥”ª˙œÏ”¶–≈∫≈ 
+ 111   1                 P2_0=1;
+ 112   1               //≈–∂œ¥”ª˙ «∑Ò”–µÕµÁ∆ΩœÏ”¶–≈∫≈ »Á≤ªœÏ”¶‘ÚÃ¯≥ˆ£¨œÏ”¶‘ÚœÚœ¬‘À––    
+ 113   1                 if(!P2_0)             //T !    
+ 114   1                 {
+ 115   2                 U8FLAG=2;
+C51 COMPILER V9.01   MAIN                                                                  05/10/2016 09:43:20 PAGE 3   
+
+ 116   2               //≈–∂œ¥”ª˙ «∑Ò∑¢≥ˆ 80us µƒµÕµÁ∆ΩœÏ”¶–≈∫≈ «∑ÒΩ· ¯        
+ 117   2                 while((!P2_0)&&U8FLAG++);
+ 118   2                 U8FLAG=2;
+ 119   2               //≈–∂œ¥”ª˙ «∑Ò∑¢≥ˆ 80us µƒ∏ﬂµÁ∆Ω£¨»Á∑¢≥ˆ‘ÚΩ¯»Î ˝æ›Ω” ’◊¥Ã¨
+ 120   2                 while((P2_0)&&U8FLAG++);
+ 121   2               // ˝æ›Ω” ’◊¥Ã¨          
+ 122   2                 COM();
+ 123   2                 U8RH_data_H_temp=U8comdata;
+ 124   2                 COM();
+ 125   2                 U8RH_data_L_temp=U8comdata;
+ 126   2                 COM();
+ 127   2                 U8T_data_H_temp=U8comdata;
+ 128   2                 COM();
+ 129   2                 U8T_data_L_temp=U8comdata;
+ 130   2                 COM();
+ 131   2                 U8checkdata_temp=U8comdata;
+ 132   2                 P2_0=1;
+ 133   2               // ˝æ›–£—È 
+ 134   2               
+ 135   2                 U8temp=(U8T_data_H_temp+U8T_data_L_temp+U8RH_data_H_temp+U8RH_data_L_temp);
+ 136   2                 if(U8temp==U8checkdata_temp)
+ 137   2                 {
+ 138   3                        U8RH_data_H=U8RH_data_H_temp;
+ 139   3                        U8RH_data_L=U8RH_data_L_temp;
+ 140   3                        U8T_data_H=U8T_data_H_temp;
+ 141   3                        U8T_data_L=U8T_data_L_temp;
+ 142   3                        U8checkdata=U8checkdata_temp;
+ 143   3                 }//fi
+ 144   2                 }//fi
+ 145   1      
+ 146   1      }
+ 147          
+ 148          /*******************************************************************************
+ 149          * ∫Ø ˝√˚         : main
+ 150          * ∫Ø ˝π¶ƒ‹                 : ÷˜∫Ø ˝
+ 151          *  ‰»Î           : Œﬁ
+ 152          *  ‰≥ˆ           : Œﬁ
+ 153          *******************************************************************************/
+ 154          
+ 155          void main()
+ 156          {
+ 157   1      uint temp1,TP1;
+ 158   1              TMOD = 0x20;      //∂® ±∆˜T1 π”√π§◊˜∑Ω Ω2
+ 159   1              TH1 = 253;        // …Ë÷√≥ı÷µ
+ 160   1              TL1 = 253;
+ 161   1              TR1 = 1;          // ø™ ºº∆ ±
+ 162   1              EA=1;
+ 163   1              LcdInit();                       //≥ı ºªØLCD1602
+ 164   1              LcdWriteCom(0x88);      //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 165   1              LcdWriteData('C'); 
+ 166   1              while(1)
+ 167   1              { 
+ 168   2                      test=0;
+ 169   2                      delay(500);
+ 170   2                      test=1;
+ 171   2                      LcdDisplay(Ds18b20ReadTemp());
+ 172   2                      delay(100);
+ 173   2                      RH();
+ 174   2                 //¥Æø⁄œ‘ æ≥Ã–Ú 
+ 175   2                 //--------------------------
+ 176   2      
+ 177   2                // temp1=(U8RH_data_H<<8)+U8RH_data_L;        //
+C51 COMPILER V9.01   MAIN                                                                  05/10/2016 09:43:20 PAGE 4   
+
+ 178   2                 str[1]=U8RH_data_L;
+ 179   2                 temp1=(U8T_data_H<<8)|U8T_data_L;
+ 180   2                      TP1=temp1;
+ 181   2                 temp1=TP1*0.0625*100+0.5;
+ 182   2      //         str[3]=U8T_data_L;
+ 183   2                 str[0] = temp1 / 10000;
+ 184   2                 str[1] = temp1 % 10000 / 1000;
+ 185   2                 str[2] = temp1 % 1000 / 100;
+ 186   2             str[3] = temp1 % 100 / 10; 
+ 187   2                 //str[4]=U8checkdata;
+ 188   2                      LcdWriteCom(0xc0);                //–¥µÿ÷∑ C0±Ì æ≥ı ºµÿ÷∑
+ 189   2                      LcdWriteData('S');  
+ 190   2                              LcdWriteCom(0xc1);                //–¥µÿ÷∑ c1±Ì æ≥ı ºµÿ÷∑
+ 191   2                      LcdWriteData('D');  
+ 192   2                              LcdWriteCom(0xc2);        //–¥µÿ÷∑ c2±Ì æ≥ı ºµÿ÷∑
+ 193   2                      LcdWriteData(':');  
+ 194   2                              LcdWriteCom(0xc3);                //–¥µÿ÷∑ c0±Ì æ≥ı ºµÿ÷∑
+ 195   2                      LcdWriteData('0'+str[0]); // ÆŒª 
+ 196   2                              LcdWriteCom(0xc4);                //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 197   2                      LcdWriteData('0'+str[1]); //∏ˆŒª 
+ 198   2                              LcdWriteCom(0xc5);                //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 199   2                      LcdWriteData('.'); // 
+ 200   2                              LcdWriteCom(0xc6);                //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 201   2                      LcdWriteData('0'+str[2]); //–° ˝µ„∫Û“ªŒª 
+ 202   2                              LcdWriteCom(0xc7);                //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 203   2                      LcdWriteData('R'); //∞ŸŒª 
+ 204   2                              LcdWriteCom(0xc8);                //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 205   2                      LcdWriteData('H'); //∞ŸŒª                          
+ 206   2              }
+ 207   1      }
+ 208          
+ 209          /*******************************************************************************
+ 210          * ∫Ø ˝√˚         : LcdDisplay()
+ 211          * ∫Ø ˝π¶ƒ‹                 : LCDœ‘ æ∂¡»°µΩµƒŒ¬∂»
+ 212          *  ‰»Î           : v
+ 213          *  ‰≥ˆ           : Œﬁ
+ 214          *******************************************************************************/
+ 215          
+ 216          void LcdDisplay(int temp)        //lcdœ‘ æ
+ 217          {
+ 218   1          
+ 219   1              unsigned char datas[] = {0, 0, 0, 0, 0}; //∂®“Â ˝◊È
+ 220   1              float tp;  
+ 221   1              if(temp< 0)                             //µ±Œ¬∂»÷µŒ™∏∫ ˝
+ 222   1              {
+ 223   2                      LcdWriteCom(0x80);              //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 224   2                  LcdWriteData('-');                  //œ‘ æ∏∫
+ 225   2                      //“ÚŒ™∂¡»°µƒŒ¬∂» « µº Œ¬∂»µƒ≤π¬Î£¨À˘“‘ºı1£¨‘Ÿ»°∑¥«Û≥ˆ‘≠¬Î
+ 226   2                      temp=temp-1;
+ 227   2                      temp=~temp;
+ 228   2                      tp=temp;
+ 229   2                      temp=tp*0.0625*100+0.5; 
+ 230   2                      //¡Ù¡Ω∏ˆ–° ˝µ„æÕ*100£¨+0.5 «Àƒ…·ŒÂ»Î£¨“ÚŒ™C”Ô—‘∏°µ„ ˝◊™ªªŒ™’˚–Õµƒ ±∫Ú∞—–° ˝µ„
+ 231   2                      //∫Û√Êµƒ ˝◊‘∂Ø»•µÙ£¨≤ªπ‹ «∑Ò¥Û”⁄0.5£¨∂¯+0.5÷Æ∫Û¥Û”⁄0.5µƒæÕ «Ω¯1¡À£¨–°”⁄0.5µƒæÕ
+ 232   2                      //À„”…œ0.5£¨ªπ «‘⁄–° ˝µ„∫Û√Ê°£
+ 233   2       
+ 234   2              }
+ 235   1              else
+ 236   1              {                       
+ 237   2                      LcdWriteCom(0x80);              //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 238   2                  LcdWriteData('+');          //œ‘ æ’˝
+ 239   2                      tp=temp;//“ÚŒ™ ˝æ›¥¶¿Ì”––° ˝µ„À˘“‘Ω´Œ¬∂»∏≥∏¯“ª∏ˆ∏°µ„–Õ±‰¡ø
+C51 COMPILER V9.01   MAIN                                                                  05/10/2016 09:43:20 PAGE 5   
+
+ 240   2                      //»Áπ˚Œ¬∂» «’˝µƒƒ«√¥£¨ƒ«√¥’˝ ˝µƒ‘≠¬ÎæÕ «≤π¬ÎÀ¸±æ…Ì
+ 241   2                      temp=tp*0.0625*100+0.5; 
+ 242   2                      //¡Ù¡Ω∏ˆ–° ˝µ„æÕ*100£¨+0.5 «Àƒ…·ŒÂ»Î£¨“ÚŒ™C”Ô—‘∏°µ„ ˝◊™ªªŒ™’˚–Õµƒ ±∫Ú∞—–° ˝µ„
+ 243   2                      //∫Û√Êµƒ ˝◊‘∂Ø»•µÙ£¨≤ªπ‹ «∑Ò¥Û”⁄0.5£¨∂¯+0.5÷Æ∫Û¥Û”⁄0.5µƒæÕ «Ω¯1¡À£¨–°”⁄0.5µƒæÕ
+ 244   2                      //À„º”…œ0.5£¨ªπ «‘⁄–° ˝µ„∫Û√Ê°£
+ 245   2              }
+ 246   1              datas[0] = temp / 10000;
+ 247   1              datas[1] = temp % 10000 / 1000;
+ 248   1              datas[2] = temp % 1000 / 100;
+ 249   1              datas[3] = temp % 100 / 10;
+ 250   1              datas[4] = temp % 10;
+ 251   1       
+ 252   1              LcdWriteCom(0x82);                //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 253   1              LcdWriteData('0'+datas[0]); //∞ŸŒª 
+ 254   1      
+ 255   1              
+ 256   1              LcdWriteCom(0x83);               //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 257   1              LcdWriteData('0'+datas[1]); // ÆŒª
+ 258   1      
+ 259   1              LcdWriteCom(0x84);              //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 260   1              LcdWriteData('0'+datas[2]); //∏ˆŒª 
+ 261   1      
+ 262   1              LcdWriteCom(0x85);              //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 263   1              LcdWriteData('.');              //œ‘ æ °Æ.°Ø
+ 264   1      
+ 265   1              LcdWriteCom(0x86);               //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 266   1              LcdWriteData('0'+datas[3]); //œ‘ æ–° ˝µ„  
+ 267   1      
+ 268   1              LcdWriteCom(0x87);               //–¥µÿ÷∑ 80±Ì æ≥ı ºµÿ÷∑
+ 269   1              LcdWriteData('0'+datas[4]); //œ‘ æ–° ˝µ„  
+ 270   1      }
+ 271          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    808    ----
+   CONSTANT SIZE    =      5    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     36      16
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
